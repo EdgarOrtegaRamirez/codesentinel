@@ -1,0 +1,67 @@
+[build]
+backend = "hatchling"
+
+[project]
+name = "codesentinel"
+version = "0.1.0"
+description = "AI-generated code quality and security scanner"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    {name = "Edgar Ortega Ramirez"},
+]
+keywords = ["ai", "code-quality", "security", "scanner", "lint"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "pyyaml>=6.0.2,<7.0.0",
+    "rich>=13.7.0,<14.0.0",
+    "toml>=0.10.2,<0.11.0",
+]
+
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.0.0,<2.0.0",
+]
+security = [
+    "bandit>=1.7.8,<2.0.0",
+]
+
+[project.scripts]
+codesentinel = "codesentinel.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/EdgarOrtegaRamirez/codesentinel"
+Repository = "https://github.com/EdgarOrtegaRamirez/codesentinel"
+Issues = "https://github.com/EdgarOrtegaRamirez/codesentinel/issues"
+Changelog = "https://github.com/EdgarOrtegaRamirez/codesentinel/blob/main/CHANGELOG.md"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "A", "C4", "SIM", "UP"]
+ignore = ["E501"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/codesentinel"]
