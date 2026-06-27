@@ -15,7 +15,6 @@ keywords = ["ai", "code-quality", "security", "scanner", "lint"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -32,6 +31,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0,<9.0.0",
+    "ruff>=0.1.0,<1.0.0",
+]
 mcp = [
     "mcp>=1.0.0,<2.0.0",
 ]
