@@ -3,11 +3,8 @@
 from __future__ import annotations
 
 import ast
-import os
 import re
-import tokenize
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from codesentinel.models import (
     AnalysisResult,
@@ -60,19 +57,21 @@ def detect_language(file_path: str) -> str:
 def _count_lines(content: str) -> int:
     """Count non-empty, non-comment lines."""
     lines = content.splitlines()
-    return len([l for l in lines if l.strip() and not l.strip().startswith("#")])
+    return len([line for line in lines if line.strip() and not line.strip().startswith("#")])
 
 
-def _apply_regex_rules(content: str, language: str, file_path: str) -> List[Finding]:
+def _apply_regex_rules(content: str, language: str, file_path: str) -> list[Finding]:
     """Apply regex-based rules to the source content."""
     findings = []
     lines = content.splitlines()
 
     for rule in CORE_RULES:
-        if language != "python" and not rule.ai_pattern:
-            # For non-Python languages, only check AI patterns and security
-            if rule.category not in (Category.SECURITY, Category.AI_PATTERNS):
-                continue
+        if (
+            language != "python"
+            and not rule.ai_pattern
+            and rule.category not in (Category.SECURITY, Category.AI_PATTERNS)
+        ):
+            continue
 
         try:
             matches = list(re.finditer(rule.pattern, content, rule.flags))
@@ -80,7 +79,7 @@ def _apply_regex_rules(content: str, language: str, file_path: str) -> List[Find
             continue
 
         for match in matches:
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             line_content = lines[min(line_num - 1, len(lines) - 1)] if lines else ""
 
             finding = Finding(
@@ -99,7 +98,7 @@ def _apply_regex_rules(content: str, language: str, file_path: str) -> List[Find
     return findings
 
 
-def _detect_ast_issues(content: str, language: str) -> List[Finding]:
+def _detect_ast_issues(content: str, language: str) -> list[Finding]:
     """Parse AST and detect issues that require structural analysis."""
     findings = []
 
@@ -136,29 +135,28 @@ def _detect_ast_issues(content: str, language: str) -> List[Finding]:
 
     # Check for overly long functions
     for node in ast.walk(tree):
-        if isinstance(node, ast.FunctionDef):
-            if node.end_lineno and node.lineno:
-                func_lines = node.end_lineno - node.lineno + 1
-                if func_lines > 50:
-                    finding = Finding(
-                        rule_id="AI-025",
-                        title="Excessively long functions",
-                        description=f"Function '{node.name}' is {func_lines} lines long.",
-                        severity=Severity.MEDIUM,
-                        category=Category.MAINTAINABILITY,
-                        line=node.lineno,
-                        suggestion="Break this function into smaller, focused helper functions.",
-                        confidence=0.7,
-                        code_snippet=f"def {node.name}(...)",
-                        ai_pattern=True,
-                    )
-                    findings.append(finding)
-                    break  # Only report once for first long function
+        if isinstance(node, ast.FunctionDef) and node.end_lineno and node.lineno:
+            func_lines = node.end_lineno - node.lineno + 1
+            if func_lines > 50:
+                finding = Finding(
+                    rule_id="AI-025",
+                    title="Excessively long functions",
+                    description=f"Function '{node.name}' is {func_lines} lines long.",
+                    severity=Severity.MEDIUM,
+                    category=Category.MAINTAINABILITY,
+                    line=node.lineno,
+                    suggestion="Break this function into smaller, focused helper functions.",
+                    confidence=0.7,
+                    code_snippet=f"def {node.name}(...)",
+                    ai_pattern=True,
+                )
+                findings.append(finding)
+                break  # Only report once for first long function
 
     return findings
 
 
-def _check_security_patterns(content: str, language: str) -> List[Finding]:
+def _check_security_patterns(content: str, language: str) -> list[Finding]:
     """Check for language-specific security patterns."""
     findings = []
 
@@ -166,77 +164,85 @@ def _check_security_patterns(content: str, language: str) -> List[Finding]:
         return findings
 
     # Check for use of pickle (security risk)
-    pickle_pattern = re.compile(r'\bpickle\.(?:load|loads|Unpickler)\s*\(')
+    pickle_pattern = re.compile(r"\bpickle\.(?:load|loads|Unpickler)\s*\(")
     for match in pickle_pattern.finditer(content):
-        line_num = content[:match.start()].count("\n") + 1
+        line_num = content[: match.start()].count("\n") + 1
         line_content = content.splitlines()[min(line_num - 1, len(content.splitlines()) - 1)]
-        findings.append(Finding(
-            rule_id="SEC-001",
-            title="Unsafe pickle usage",
-            description="Pickle can execute arbitrary code during deserialization.",
-            severity=Severity.HIGH,
-            category=Category.SECURITY,
-            line=line_num,
-            suggestion="Use json or msgpack for safe serialization.",
-            confidence=0.95,
-            code_snippet=line_content.strip()[:200],
-        ))
+        findings.append(
+            Finding(
+                rule_id="SEC-001",
+                title="Unsafe pickle usage",
+                description="Pickle can execute arbitrary code during deserialization.",
+                severity=Severity.HIGH,
+                category=Category.SECURITY,
+                line=line_num,
+                suggestion="Use json or msgpack for safe serialization.",
+                confidence=0.95,
+                code_snippet=line_content.strip()[:200],
+            )
+        )
 
     # Check for use of os.system
-    os_system_pattern = re.compile(r'\bos\.system\s*\(')
+    os_system_pattern = re.compile(r"\bos\.system\s*\(")
     for match in os_system_pattern.finditer(content):
-        line_num = content[:match.start()].count("\n") + 1
+        line_num = content[: match.start()].count("\n") + 1
         line_content = content.splitlines()[min(line_num - 1, len(content.splitlines()) - 1)]
-        findings.append(Finding(
-            rule_id="SEC-002",
-            title="os.system() usage",
-            description="os.system() is vulnerable to command injection.",
-            severity=Severity.HIGH,
-            category=Category.SECURITY,
-            line=line_num,
-            suggestion="Use subprocess.run() with shell=False and a list of arguments.",
-            confidence=1.0,
-            code_snippet=line_content.strip()[:200],
-        ))
+        findings.append(
+            Finding(
+                rule_id="SEC-002",
+                title="os.system() usage",
+                description="os.system() is vulnerable to command injection.",
+                severity=Severity.HIGH,
+                category=Category.SECURITY,
+                line=line_num,
+                suggestion="Use subprocess.run() with shell=False and a list of arguments.",
+                confidence=1.0,
+                code_snippet=line_content.strip()[:200],
+            )
+        )
 
     # Check for use of tempfile.mktemp (race condition)
-    mktemp_pattern = re.compile(r'\btempfile\.mktemp\s*\(')
+    mktemp_pattern = re.compile(r"\btempfile\.mktemp\s*\(")
     for match in mktemp_pattern.finditer(content):
-        line_num = content[:match.start()].count("\n") + 1
+        line_num = content[: match.start()].count("\n") + 1
         line_content = content.splitlines()[min(line_num - 1, len(content.splitlines()) - 1)]
-        findings.append(Finding(
-            rule_id="SEC-003",
-            title="tempfile.mktemp() usage",
-            description="mktemp() has a race condition. Use mkstemp() instead.",
-            severity=Severity.MEDIUM,
-            category=Category.SECURITY,
-            line=line_num,
-            suggestion="Use tempfile.mkstemp() or tempfile.NamedTemporaryFile().",
-            confidence=0.9,
-            code_snippet=line_content.strip()[:200],
-        ))
+        findings.append(
+            Finding(
+                rule_id="SEC-003",
+                title="tempfile.mktemp() usage",
+                description="mktemp() has a race condition. Use mkstemp() instead.",
+                severity=Severity.MEDIUM,
+                category=Category.SECURITY,
+                line=line_num,
+                suggestion="Use tempfile.mkstemp() or tempfile.NamedTemporaryFile().",
+                confidence=0.9,
+                code_snippet=line_content.strip()[:200],
+            )
+        )
 
     # Check for use of weak hashing
-    weak_hash_pattern = re.compile(r'\b(hashlib\.)?(md5|sha1)\s*\(')
+    weak_hash_pattern = re.compile(r"\b(hashlib\.)?(md5|sha1)\s*\(")
     for match in weak_hash_pattern.finditer(content):
-        line_num = content[:match.start()].count("\n") + 1
+        line_num = content[: match.start()].count("\n") + 1
         line_content = content.splitlines()[min(line_num - 1, len(content.splitlines()) - 1)]
-        findings.append(Finding(
-            rule_id="SEC-004",
-            title="Weak hash algorithm",
-            description="MD5 and SHA1 are cryptographically broken.",
-            severity=Severity.HIGH,
-            category=Category.SECURITY,
-            line=line_num,
-            suggestion="Use SHA-256 or stronger: hashlib.sha256().",
-            confidence=0.95,
-            code_snippet=line_content.strip()[:200],
-        ))
+        findings.append(
+            Finding(
+                rule_id="SEC-004",
+                title="Weak hash algorithm",
+                description="MD5 and SHA1 are cryptographically broken.",
+                severity=Severity.HIGH,
+                category=Category.SECURITY,
+                line=line_num,
+                suggestion="Use SHA-256 or stronger: hashlib.sha256().",
+                confidence=0.95,
+                code_snippet=line_content.strip()[:200],
+            )
+        )
 
     return findings
 
 
-def _check_ai_quality(content: str, language: str) -> List[Finding]:
+def _check_ai_quality(content: str, language: str) -> list[Finding]:
     """Check for AI-generated code quality issues."""
     findings = []
 
@@ -248,28 +254,32 @@ def _check_ai_quality(content: str, language: str) -> List[Finding]:
 
     # Check for very short files (likely scaffolding)
     if total_lines < 10 and total_lines > 0:
-        findings.append(Finding(
-            rule_id="AI-Q-001",
-            title="Very short file",
-            description="Files under 10 lines may be scaffolding or incomplete.",
-            severity=Severity.INFO,
-            category=Category.AI_PATTERNS,
-            suggestion="Consider if this file needs more substance or should be merged.",
-            confidence=0.5,
-        ))
+        findings.append(
+            Finding(
+                rule_id="AI-Q-001",
+                title="Very short file",
+                description="Files under 10 lines may be scaffolding or incomplete.",
+                severity=Severity.INFO,
+                category=Category.AI_PATTERNS,
+                suggestion="Consider if this file needs more substance or should be merged.",
+                confidence=0.5,
+            )
+        )
 
     # Check for excessive use of 'TODO' comments
-    todo_count = sum(1 for l in lines if re.search(r'#\s*TODO', l, re.IGNORECASE))
+    todo_count = sum(1 for line in lines if re.search(r"#\s*TODO", line, re.IGNORECASE))
     if todo_count > 5:
-        findings.append(Finding(
-            rule_id="AI-Q-002",
-            title="Excessive TODO comments",
-            description=f"Found {todo_count} TODO comments. AI often generates code with many TODOs.",
-            severity=Severity.LOW,
-            category=Category.AI_PATTERNS,
-            suggestion="Address TODOs or convert to proper issue tracking.",
-            confidence=0.7,
-        ))
+        findings.append(
+            Finding(
+                rule_id="AI-Q-002",
+                title="Excessive TODO comments",
+                description=f"Found {todo_count} TODO comments. AI often generates code with many TODOs.",
+                severity=Severity.LOW,
+                category=Category.AI_PATTERNS,
+                suggestion="Address TODOs or convert to proper issue tracking.",
+                confidence=0.7,
+            )
+        )
 
     # Check for very long docstrings (AI often generates verbose docs)
     in_docstring = False
@@ -285,33 +295,37 @@ def _check_ai_quality(content: str, language: str) -> List[Finding]:
             elif count >= 2:
                 # Single-line docstring
                 if len(stripped) > 200:
-                    findings.append(Finding(
-                        rule_id="AI-Q-003",
-                        title="Excessively verbose docstring",
-                        description="AI often generates very long docstrings. Keep them concise.",
-                        severity=Severity.INFO,
-                        category=Category.AI_PATTERNS,
-                        suggestion="Keep docstrings to 3-5 lines summarizing purpose, args, and return.",
-                        confidence=0.6,
-                    ))
+                    findings.append(
+                        Finding(
+                            rule_id="AI-Q-003",
+                            title="Excessively verbose docstring",
+                            description="AI often generates very long docstrings. Keep them concise.",
+                            severity=Severity.INFO,
+                            category=Category.AI_PATTERNS,
+                            suggestion="Keep docstrings to 3-5 lines summarizing purpose, args, and return.",
+                            confidence=0.6,
+                        )
+                    )
         elif in_docstring:
             docstring_lines += 1
             if docstring_lines > 20:
-                findings.append(Finding(
-                    rule_id="AI-Q-004",
-                    title="Very long docstring",
-                    description=f"Docstring is {docstring_lines} lines. AI often over-generates docs.",
-                    severity=Severity.INFO,
-                    category=Category.AI_PATTERNS,
-                    suggestion="Keep docstrings concise. Aim for 3-5 lines.",
-                    confidence=0.6,
-                ))
+                findings.append(
+                    Finding(
+                        rule_id="AI-Q-004",
+                        title="Very long docstring",
+                        description=f"Docstring is {docstring_lines} lines. AI often over-generates docs.",
+                        severity=Severity.INFO,
+                        category=Category.AI_PATTERNS,
+                        suggestion="Keep docstrings concise. Aim for 3-5 lines.",
+                        confidence=0.6,
+                    )
+                )
                 in_docstring = False
 
     return findings
 
 
-def calculate_scores(findings: List[Finding]) -> Score:
+def calculate_scores(findings: list[Finding]) -> Score:
     """Calculate quality scores from findings."""
     score = Score()
     score.num_findings = len(findings)
@@ -344,7 +358,7 @@ def calculate_scores(findings: List[Finding]) -> Score:
         Category.AI_PATTERNS: 0.0,
         Category.BEST_PRACTICES: 0.0,
     }
-    category_counts = {cat: 0 for cat in categories}
+    category_counts = dict.fromkeys(categories, 0)
 
     for f in findings:
         penalty = category_penalties.get(f.severity, 0)
@@ -385,7 +399,7 @@ def calculate_scores(findings: List[Finding]) -> Score:
 
 def analyze_file(
     file_path: str,
-    rules: Optional[List] = None,
+    rules: list | None = None,
 ) -> AnalysisResult:
     """Analyze a single file and return results."""
     path = Path(file_path)
@@ -395,29 +409,33 @@ def analyze_file(
     try:
         content = path.read_text(encoding="utf-8")
         # Quick check: look for null bytes which indicate binary content
-        if '\x00' in content:
+        if "\x00" in content:
             return AnalysisResult(
                 file_path=str(file_path),
                 scores=Score(total=0),
-                findings=[Finding(
-                    rule_id="ERR-001",
-                    title="Binary or non-UTF-8 file",
-                    description="Cannot read file as text.",
-                    severity=Severity.INFO,
-                    category=Category.INFO,
-                )],
+                findings=[
+                    Finding(
+                        rule_id="ERR-001",
+                        title="Binary or non-UTF-8 file",
+                        description="Cannot read file as text.",
+                        severity=Severity.INFO,
+                        category=Category.INFO,
+                    )
+                ],
             )
     except UnicodeDecodeError:
         return AnalysisResult(
             file_path=str(file_path),
             scores=Score(total=0, grade="F"),
-            findings=[Finding(
-                rule_id="ERR-001",
-                title="Binary or non-UTF-8 file",
-                description="Cannot read file as text.",
-                severity=Severity.INFO,
-                category=Category.INFO,
-            )],
+            findings=[
+                Finding(
+                    rule_id="ERR-001",
+                    title="Binary or non-UTF-8 file",
+                    description="Cannot read file as text.",
+                    severity=Severity.INFO,
+                    category=Category.INFO,
+                )
+            ],
         )
 
     language = detect_language(str(file_path))
@@ -458,10 +476,12 @@ def analyze_file(
 
 def analyze_directory(
     dir_path: str,
-    extensions: Optional[List[str]] = None,
-    exclude: Optional[List[str]] = None,
-) -> List[AnalysisResult]:
+    extensions: list[str] | None = None,
+    exclude: list[str] | None = None,
+) -> list[AnalysisResult]:
     """Analyze all files in a directory."""
+    from pathlib import Path as _Path
+
     if extensions is None:
         extensions = [".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".rs", ".java"]
 
@@ -469,14 +489,14 @@ def analyze_directory(
         exclude = [".git", "__pycache__", "node_modules", ".venv", "venv", "build", "dist"]
 
     results = []
-    dir_path = Path(dir_path)
+    target: _Path = _Path(dir_path)
 
-    if not dir_path.is_dir():
+    if not target.is_dir():
         raise NotADirectoryError(f"Not a directory: {dir_path}")
 
-    for file_path in sorted(dir_path.rglob("*")):
+    for file_path in sorted(target.rglob("*")):
         # Skip excluded directories
-        rel = file_path.relative_to(dir_path)
+        rel = file_path.relative_to(target)
         parts = rel.parts
         if any(part in exclude for part in parts):
             continue
@@ -491,16 +511,20 @@ def analyze_directory(
             result = analyze_file(str(file_path))
             results.append(result)
         except Exception as e:
-            results.append(AnalysisResult(
-                file_path=str(file_path),
-                scores=Score(total=0, grade="F"),
-                findings=[Finding(
-                    rule_id="ERR-002",
-                    title="Analysis error",
-                    description=str(e),
-                    severity=Severity.INFO,
-                    category=Category.INFO,
-                )],
-            ))
+            results.append(
+                AnalysisResult(
+                    file_path=str(file_path),
+                    scores=Score(total=0, grade="F"),
+                    findings=[
+                        Finding(
+                            rule_id="ERR-002",
+                            title="Analysis error",
+                            description=str(e),
+                            severity=Severity.INFO,
+                            category=Category.INFO,
+                        )
+                    ],
+                )
+            )
 
     return results

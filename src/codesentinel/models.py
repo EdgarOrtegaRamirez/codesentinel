@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
-from typing import List, Optional
 
 
 class Severity(enum.Enum):
     """Severity level of a finding."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -18,6 +18,7 @@ class Severity(enum.Enum):
 
 class Category(enum.Enum):
     """Category of a code issue."""
+
     SECURITY = "security"
     QUALITY = "quality"
     AI_PATTERNS = "ai_patterns"
@@ -30,13 +31,14 @@ class Category(enum.Enum):
 @dataclass
 class Finding:
     """A single finding from code analysis."""
+
     rule_id: str
     title: str
     description: str
     severity: Severity
     category: Category
-    line: Optional[int] = None
-    column: Optional[int] = None
+    line: int | None = None
+    column: int | None = None
     suggestion: str = ""
     confidence: float = 1.0  # 0.0 to 1.0
     code_snippet: str = ""
@@ -67,6 +69,7 @@ class Finding:
 @dataclass
 class Score:
     """Overall quality score for analyzed code."""
+
     total: float = 100.0
     security: float = 100.0
     quality: float = 100.0
@@ -120,9 +123,10 @@ class Score:
 @dataclass
 class AnalysisResult:
     """Complete analysis result for a file or directory."""
+
     file_path: str
     scores: Score
-    findings: List[Finding] = field(default_factory=list)
+    findings: list[Finding] = field(default_factory=list)
     metadata: dict = field(default_factory=dict)
     language: str = ""
     line_count: int = 0

@@ -6,11 +6,15 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 from codesentinel.__init__ import __version__
 from codesentinel.analyzer import analyze_directory, analyze_file
-from codesentinel.report import format_text_report, format_json_report, format_markdown_report, save_report
+from codesentinel.report import (
+    format_json_report,
+    format_markdown_report,
+    format_text_report,
+    save_report,
+)
 
 
 def cmd_scan(args: argparse.Namespace) -> int:
@@ -45,15 +49,14 @@ def cmd_scan(args: argparse.Namespace) -> int:
         print(output)
 
     # Exit code based on severity
-    has_blocking = any(
-        f.is_blocking for r in results for f in r.findings
-    )
+    has_blocking = any(f.is_blocking for r in results for f in r.findings)
     if args.fail_on_severity:
         severities = {"critical", "high", "medium", "low"}
         threshold_idx = list(severities).index(args.fail_on_severity)
         has_blocking = any(
             list(severities).index(f.severity.value) <= threshold_idx
-            for r in results for f in r.findings
+            for r in results
+            for f in r.findings
         )
 
     if has_blocking and not args.quiet:
@@ -69,6 +72,7 @@ def cmd_rules(args: argparse.Namespace) -> int:
 
     if args.category:
         from codesentinel.models import Category
+
         try:
             cat = Category(args.category)
             rules = [r for r in rules if r.category == cat]
@@ -79,6 +83,7 @@ def cmd_rules(args: argparse.Namespace) -> int:
 
     if args.severity:
         from codesentinel.models import Severity
+
         try:
             sev = Severity(args.severity)
             rules = [r for r in rules if r.severity == sev]
@@ -157,6 +162,7 @@ def cmd_sample(args: argparse.Namespace) -> int:
 
     output_path = args.output or "codesentinel.yaml"
     import yaml
+
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     yaml.dump(config, path, default_flow_style=False, sort_keys=False)
@@ -188,26 +194,43 @@ Examples:
     scan_parser = subparsers.add_parser("scan", help="Scan code for quality issues")
     scan_parser.add_argument("path", help="File or directory to scan")
     scan_parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=["text", "json", "markdown"],
         default="text",
         help="Output format (default: text)",
     )
     scan_parser.add_argument("--output", "-o", help="Output file path")
-    scan_parser.add_argument("--extensions", nargs="+", default=None, help="File extensions to scan")
+    scan_parser.add_argument(
+        "--extensions", nargs="+", default=None, help="File extensions to scan"
+    )
     scan_parser.add_argument("--exclude", nargs="+", default=None, help="Directories to exclude")
-    scan_parser.add_argument("--fail-on-severity", choices=["critical", "high", "medium", "low"], help="Fail CI if findings at this severity or above")
-    scan_parser.add_argument("--quiet", "-q", action="store_true", help="Suppress output on success")
+    scan_parser.add_argument(
+        "--fail-on-severity",
+        choices=["critical", "high", "medium", "low"],
+        help="Fail CI if findings at this severity or above",
+    )
+    scan_parser.add_argument(
+        "--quiet", "-q", action="store_true", help="Suppress output on success"
+    )
 
     # rules command
     rules_parser = subparsers.add_parser("rules", help="List available analysis rules")
-    rules_parser.add_argument("--category", help="Filter by category (security, quality, ai_patterns, etc.)")
-    rules_parser.add_argument("--severity", help="Filter by severity (critical, high, medium, low, info)")
+    rules_parser.add_argument(
+        "--category", help="Filter by category (security, quality, ai_patterns, etc.)"
+    )
+    rules_parser.add_argument(
+        "--severity", help="Filter by severity (critical, high, medium, low, info)"
+    )
     rules_parser.add_argument("--json", action="store_true", help="Output as JSON")
 
     # sample-config command
-    sample_parser = subparsers.add_parser("sample-config", help="Generate a sample configuration file")
-    sample_parser.add_argument("--output", "-o", default="codesentinel.yaml", help="Output file path")
+    sample_parser = subparsers.add_parser(
+        "sample-config", help="Generate a sample configuration file"
+    )
+    sample_parser.add_argument(
+        "--output", "-o", default="codesentinel.yaml", help="Output file path"
+    )
 
     args = parser.parse_args()
 

@@ -46,12 +46,13 @@ class TestCoreRules:
 
     def test_rules_patterns_are_valid_regex(self):
         import re
+
         rules = get_rules()
         for rule in rules:
             try:
                 re.compile(rule.pattern, rule.flags)
             except re.error as e:
-                assert False, f"Invalid regex pattern for {rule.rule_id}: {e}"
+                raise AssertionError(f"Invalid regex pattern for {rule.rule_id}: {e}") from e
 
 
 class TestRulesFiltering:

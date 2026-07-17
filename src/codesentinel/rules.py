@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List, Optional
 
-from codesentinel.models import Category, Finding, Severity
+from codesentinel.models import Category, Severity
 
 
 @dataclass
 class Rule:
     """A single analysis rule."""
+
     rule_id: str
     title: str
     description: str
@@ -25,7 +25,7 @@ class Rule:
 
 
 # Core rules for detecting AI-generated code patterns and quality issues
-CORE_RULES: List[Rule] = [
+CORE_RULES: list[Rule] = [
     # --- AI-generated code patterns ---
     Rule(
         rule_id="AI-001",
@@ -44,7 +44,7 @@ CORE_RULES: List[Rule] = [
         description="Bare except clauses catch all exceptions including SystemExit and KeyboardInterrupt.",
         severity=Severity.HIGH,
         category=Category.BEST_PRACTICES,
-        pattern=r'except\s*:',
+        pattern=r"except\s*:",
         suggestion="Use specific exception types: 'except ValueError:' instead of bare 'except:'.",
         confidence=1.0,
     ),
@@ -54,7 +54,7 @@ CORE_RULES: List[Rule] = [
         description="AI-generated code frequently uses global variables instead of proper state management.",
         severity=Severity.MEDIUM,
         category=Category.AI_PATTERNS,
-        pattern=r'^\s*global\s+\w+',
+        pattern=r"^\s*global\s+\w+",
         flags=re.MULTILINE,
         suggestion="Use class state, dependency injection, or function parameters instead of globals.",
         confidence=0.7,
@@ -66,7 +66,7 @@ CORE_RULES: List[Rule] = [
         description="Use of eval/exec is a major security risk. AI often introduces these when building dynamic parsers.",
         severity=Severity.CRITICAL,
         category=Category.SECURITY,
-        pattern=r'\b(eval|exec)\s*\(',
+        pattern=r"\b(eval|exec)\s*\(",
         suggestion="Use ast.literal_eval() for safe evaluation, or build a proper parser.",
         confidence=1.0,
     ),
@@ -98,7 +98,7 @@ CORE_RULES: List[Rule] = [
         description="shell=True is dangerous and enables command injection attacks.",
         severity=Severity.HIGH,
         category=Category.SECURITY,
-        pattern=r'subprocess\.\w+\(.*shell\s*=\s*True',
+        pattern=r"subprocess\.\w+\(.*shell\s*=\s*True",
         suggestion="Use shell=False and pass arguments as a list.",
         confidence=1.0,
     ),
@@ -130,7 +130,7 @@ CORE_RULES: List[Rule] = [
         description="Creating lists inside loops is inefficient. Consider using generators.",
         severity=Severity.LOW,
         category=Category.PERFORMANCE,
-        pattern=r'for\s+\w+\s+in\s+range\([^)]*\):\s*\n\s*\w+\s*=\s*\[',
+        pattern=r"for\s+\w+\s+in\s+range\([^)]*\):\s*\n\s*\w+\s*=\s*\[",
         flags=re.MULTILINE,
         suggestion="Use generators or pre-allocate lists for better memory efficiency.",
         confidence=0.7,
@@ -142,7 +142,7 @@ CORE_RULES: List[Rule] = [
         description="Commented-out code suggests incomplete cleanup. AI often leaves debug code commented.",
         severity=Severity.INFO,
         category=Category.MAINTAINABILITY,
-        pattern=r'^\s*#[^\n]*(?:TODO|FIXME|HACK|XXX|DEBUG|REVIEW|TEMP|WORKAROUND)',
+        pattern=r"^\s*#[^\n]*(?:TODO|FIXME|HACK|XXX|DEBUG|REVIEW|TEMP|WORKAROUND)",
         flags=re.MULTILINE,
         suggestion="Remove commented-out code or convert to proper TODO tracking.",
         confidence=0.9,
@@ -153,7 +153,7 @@ CORE_RULES: List[Rule] = [
         description="Lines over 100 characters reduce readability.",
         severity=Severity.LOW,
         category=Category.MAINTAINABILITY,
-        pattern=r'^.{101,}$',
+        pattern=r"^.{101,}$",
         flags=re.MULTILINE,
         suggestion="Break long lines for better readability.",
         confidence=1.0,
@@ -164,7 +164,7 @@ CORE_RULES: List[Rule] = [
         description="AI sometimes writes 'any x for x in y' without proper generator syntax.",
         severity=Severity.MEDIUM,
         category=Category.QUALITY,
-        pattern=r'(?:any|all)\s+\w+\s+for\s+\w+\s+in',
+        pattern=r"(?:any|all)\s+\w+\s+for\s+\w+\s+in",
         suggestion="Use proper generator expression: 'any(x for x in y)'.",
         confidence=0.8,
         ai_pattern=True,
@@ -175,7 +175,7 @@ CORE_RULES: List[Rule] = [
         description="File operations without try/except can crash on I/O errors.",
         severity=Severity.MEDIUM,
         category=Category.BEST_PRACTICES,
-        pattern=r'(?:open|Path\.\w+\(|shutil\.\w+\()[^)]*\)\s*(?!.*(?:try|except))',
+        pattern=r"(?:open|Path\.\w+\(|shutil\.\w+\()[^)]*\)\s*(?!.*(?:try|except))",
         flags=re.MULTILINE,
         suggestion="Wrap file operations in try/except blocks.",
         confidence=0.65,
@@ -186,7 +186,7 @@ CORE_RULES: List[Rule] = [
         description="Imported modules that are never used add overhead and confusion.",
         severity=Severity.LOW,
         category=Category.MAINTAINABILITY,
-        pattern=r'^\s*import\s+\w+(\s*,\s*\w+)*\s*$',
+        pattern=r"^\s*import\s+\w+(\s*,\s*\w+)*\s*$",
         flags=re.MULTILINE,
         suggestion="Remove unused imports to keep the codebase clean.",
         confidence=0.5,
@@ -197,7 +197,7 @@ CORE_RULES: List[Rule] = [
         description="Standalone 'pass' often indicates incomplete implementation, common in AI scaffolding.",
         severity=Severity.INFO,
         category=Category.AI_PATTERNS,
-        pattern=r'^\s*pass\s*$',
+        pattern=r"^\s*pass\s*$",
         flags=re.MULTILINE,
         suggestion="Implement the function or add a TODO comment explaining why it's empty.",
         confidence=0.7,
@@ -209,7 +209,7 @@ CORE_RULES: List[Rule] = [
         description="Reassigning parameters is confusing and often indicates AI-generated code that didn't think through the design.",
         severity=Severity.MEDIUM,
         category=Category.QUALITY,
-        pattern=r'def\s+\w+\([^)]*\):\s*\n\s*\w+\s*=\s*',
+        pattern=r"def\s+\w+\([^)]*\):\s*\n\s*\w+\s*=\s*",
         flags=re.MULTILINE,
         suggestion="Use a new variable name instead of reassigning the parameter.",
         confidence=0.75,
@@ -221,7 +221,7 @@ CORE_RULES: List[Rule] = [
         description="Magic numbers for timeouts make code fragile and hard to configure.",
         severity=Severity.LOW,
         category=Category.BEST_PRACTICES,
-        pattern=r'(?:time\.sleep|timeout|delay)\s*=\s*\d{2,}',
+        pattern=r"(?:time\.sleep|timeout|delay)\s*=\s*\d{2,}",
         suggestion="Extract magic numbers to named constants with documentation.",
         confidence=0.8,
     ),
@@ -231,7 +231,7 @@ CORE_RULES: List[Rule] = [
         description="Print statements should be replaced with proper logging for production code.",
         severity=Severity.LOW,
         category=Category.BEST_PRACTICES,
-        pattern=r'\bprint\s*\(',
+        pattern=r"\bprint\s*\(",
         suggestion="Use the logging module: import logging; logger = logging.getLogger(__name__).",
         confidence=0.9,
     ),
@@ -263,7 +263,7 @@ CORE_RULES: List[Rule] = [
         description="Deeply nested exception handling is hard to read and maintain.",
         severity=Severity.MEDIUM,
         category=Category.QUALITY,
-        pattern=r'try:\s*\n\s*try:\s*\n\s*except',
+        pattern=r"try:\s*\n\s*try:\s*\n\s*except",
         flags=re.MULTILINE | re.DOTALL,
         suggestion="Flatten nested exception handling using helper functions.",
         confidence=0.75,
@@ -275,7 +275,7 @@ CORE_RULES: List[Rule] = [
         description="Overuse of isinstance checks can indicate a lack of duck typing.",
         severity=Severity.LOW,
         category=Category.QUALITY,
-        pattern=r'isinstance\s*\([^)]*,\s*\([^)]+\)\s*\)',
+        pattern=r"isinstance\s*\([^)]*,\s*\([^)]+\)\s*\)",
         suggestion="Consider duck typing or protocol/ABC patterns instead.",
         confidence=0.6,
     ),
@@ -285,7 +285,7 @@ CORE_RULES: List[Rule] = [
         description="Mutable default arguments (lists, dicts) are shared across calls.",
         severity=Severity.HIGH,
         category=Category.BEST_PRACTICES,
-        pattern=r'def\s+\w+\([^)]*=\s*(?:\[|\{|set\(|dict\()',
+        pattern=r"def\s+\w+\([^)]*=\s*(?:\[|\{|set\(|dict\()",
         suggestion="Use None as default and initialize inside the function.",
         confidence=1.0,
     ),
@@ -295,7 +295,7 @@ CORE_RULES: List[Rule] = [
         description="Functions over 50 lines are hard to understand and maintain.",
         severity=Severity.MEDIUM,
         category=Category.MAINTAINABILITY,
-        pattern=r'def\s+\w+\([^)]*\):\s*\n(?:[^\n]*\n){50,}',
+        pattern=r"def\s+\w+\([^)]*\):\s*\n(?:[^\n]*\n){50,}",
         flags=re.MULTILINE,
         suggestion="Break this function into smaller, focused helper functions.",
         confidence=0.7,
@@ -304,22 +304,22 @@ CORE_RULES: List[Rule] = [
 ]
 
 
-def get_rules() -> List[Rule]:
+def get_rules() -> list[Rule]:
     """Return the list of all analysis rules."""
     return list(CORE_RULES)
 
 
-def get_rules_by_category(category: Category) -> List[Rule]:
+def get_rules_by_category(category: Category) -> list[Rule]:
     """Return rules filtered by category."""
     return [r for r in CORE_RULES if r.category == category]
 
 
-def get_rules_by_severity(severity: Severity) -> List[Rule]:
+def get_rules_by_severity(severity: Severity) -> list[Rule]:
     """Return rules filtered by severity."""
     return [r for r in CORE_RULES if r.severity == severity]
 
 
-def get_rules_for_language(language: str) -> List[Rule]:
+def get_rules_for_language(language: str) -> list[Rule]:
     """Return rules applicable to a specific language."""
     # For now, all rules apply to Python. This can be extended for other languages.
     if language == "python":

@@ -1,16 +1,15 @@
 """Tests for CodeSentinel CLI and reports."""
 
 import json
-import tempfile
 from pathlib import Path
 
+from codesentinel.models import AnalysisResult, Category, Finding, Score, Severity
 from codesentinel.report import (
-    format_text_report,
     format_json_report,
     format_markdown_report,
+    format_text_report,
     save_report,
 )
-from codesentinel.models import AnalysisResult, Score, Finding, Severity, Category
 
 
 class TestReportFormats:
@@ -103,8 +102,12 @@ class TestReportFormats:
 
     def test_multiple_files_report(self):
         results = [
-            AnalysisResult(file_path="a.py", scores=Score(total=90), language="python", line_count=10),
-            AnalysisResult(file_path="b.py", scores=Score(total=70), language="python", line_count=20),
+            AnalysisResult(
+                file_path="a.py", scores=Score(total=90), language="python", line_count=10
+            ),
+            AnalysisResult(
+                file_path="b.py", scores=Score(total=70), language="python", line_count=20
+            ),
         ]
         report = format_text_report(results)
         assert "a.py" in report

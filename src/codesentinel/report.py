@@ -4,12 +4,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import List, Optional
 
 from codesentinel.analyzer import AnalysisResult
 
 
-def format_text_report(results: List[AnalysisResult]) -> str:
+def format_text_report(results: list[AnalysisResult]) -> str:
     """Format analysis results as a human-readable text report."""
     lines = []
     lines.append("=" * 72)
@@ -23,9 +22,9 @@ def format_text_report(results: List[AnalysisResult]) -> str:
         lines.append(f"   Grade: {result.scores.grade} | Score: {result.scores.total:.1f}/100")
 
         if result.scores.is_passing:
-            lines.append(f"   Status: ✅ PASSING")
+            lines.append("   Status: ✅ PASSING")
         else:
-            lines.append(f"   Status: ❌ FAILING")
+            lines.append("   Status: ❌ FAILING")
         lines.append("")
 
         # Category breakdown
@@ -58,7 +57,9 @@ def format_text_report(results: List[AnalysisResult]) -> str:
                 if sev not in severity_groups:
                     continue
                 findings = severity_groups[sev]
-                icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢", "info": "ℹ️"}[sev]
+                icon = {"critical": "🔴", "high": "🟠", "medium": "🟡", "low": "🟢", "info": "ℹ️"}[
+                    sev
+                ]
                 lines.append(f"   {icon} {sev.upper()} ({len(findings)}):")
                 for f in findings:
                     loc = f"line {f.line}" if f.line else "global"
@@ -82,14 +83,18 @@ def format_text_report(results: List[AnalysisResult]) -> str:
     lines.append("📊 SUMMARY")
     lines.append(f"   Files analyzed: {len(results)}")
     lines.append(f"   Total findings: {total_findings}")
-    lines.append(f"   Critical: {total_critical} | High: {total_high} | Medium: {sum(r.scores.num_medium for r in results)} | Low: {sum(r.scores.num_low for r in results)}")
-    lines.append(f"   Average score: {avg_score:.1f}/100 (Grade: {chr(65 + min(int(avg_score // 10) - 6, 4))})")
+    lines.append(
+        f"   Critical: {total_critical} | High: {total_high} | Medium: {sum(r.scores.num_medium for r in results)} | Low: {sum(r.scores.num_low for r in results)}"
+    )
+    lines.append(
+        f"   Average score: {avg_score:.1f}/100 (Grade: {chr(65 + min(int(avg_score // 10) - 6, 4))})"
+    )
     lines.append("=" * 72)
 
     return "\n".join(lines)
 
 
-def format_json_report(results: List[AnalysisResult]) -> str:
+def format_json_report(results: list[AnalysisResult]) -> str:
     """Format analysis results as JSON."""
     data = {
         "report": "CodeSentinel Analysis Report",
@@ -105,7 +110,7 @@ def format_json_report(results: List[AnalysisResult]) -> str:
     return json.dumps(data, indent=2)
 
 
-def format_markdown_report(results: List[AnalysisResult]) -> str:
+def format_markdown_report(results: list[AnalysisResult]) -> str:
     """Format analysis results as Markdown."""
     lines = []
     lines.append("# CodeSentinel - AI Code Quality Report\n")
@@ -115,7 +120,9 @@ def format_markdown_report(results: List[AnalysisResult]) -> str:
         lines.append(f"- **Language:** {result.language}")
         lines.append(f"- **Lines:** {result.line_count}")
         lines.append(f"- **Grade:** {result.scores.grade} ({result.scores.total:.1f}/100)")
-        lines.append(f"- **Status:** {'✅ PASSING' if result.scores.is_passing else '❌ FAILING'}\n")
+        lines.append(
+            f"- **Status:** {'✅ PASSING' if result.scores.is_passing else '❌ FAILING'}\n"
+        )
 
         # Score table
         lines.append("### Score Breakdown")
@@ -158,8 +165,8 @@ def format_markdown_report(results: List[AnalysisResult]) -> str:
     avg_score = sum(r.scores.total for r in results) / max(len(results), 1)
 
     lines.append("## 📊 Summary\n")
-    lines.append(f"| Metric | Value |")
-    lines.append(f"|--------|-------|")
+    lines.append("| Metric | Value |")
+    lines.append("|--------|-------|")
     lines.append(f"| Files analyzed | {len(results)} |")
     lines.append(f"| Total findings | {total_findings} |")
     lines.append(f"| Critical | {total_critical} |")
@@ -170,14 +177,16 @@ def format_markdown_report(results: List[AnalysisResult]) -> str:
     return "\n".join(lines)
 
 
-def save_report(results: List[AnalysisResult], output_path: str, format: str = "text") -> str:
+def save_report(
+    results: list[AnalysisResult], output_path: str, output_format: str = "text"
+) -> str:
     """Save report to file and return the path."""
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    if format == "json":
+    if output_format == "json":
         content = format_json_report(results)
-    elif format == "markdown":
+    elif output_format == "markdown":
         content = format_markdown_report(results)
     else:
         content = format_text_report(results)

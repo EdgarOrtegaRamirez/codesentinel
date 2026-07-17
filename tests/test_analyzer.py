@@ -1,9 +1,5 @@
 """Tests for CodeSentinel analyzer engine."""
 
-import os
-import tempfile
-from pathlib import Path
-
 from codesentinel.analyzer import (
     _apply_regex_rules,
     _check_ai_quality,
@@ -206,10 +202,34 @@ class TestCalculateScores:
 
     def test_with_multiple_severities(self):
         findings = [
-            Finding(rule_id="T1", title="C", description="C", severity=Severity.CRITICAL, category=Category.SECURITY),
-            Finding(rule_id="T2", title="H", description="H", severity=Severity.HIGH, category=Category.QUALITY),
-            Finding(rule_id="T3", title="M", description="M", severity=Severity.MEDIUM, category=Category.MAINTAINABILITY),
-            Finding(rule_id="T4", title="L", description="L", severity=Severity.LOW, category=Category.PERFORMANCE),
+            Finding(
+                rule_id="T1",
+                title="C",
+                description="C",
+                severity=Severity.CRITICAL,
+                category=Category.SECURITY,
+            ),
+            Finding(
+                rule_id="T2",
+                title="H",
+                description="H",
+                severity=Severity.HIGH,
+                category=Category.QUALITY,
+            ),
+            Finding(
+                rule_id="T3",
+                title="M",
+                description="M",
+                severity=Severity.MEDIUM,
+                category=Category.MAINTAINABILITY,
+            ),
+            Finding(
+                rule_id="T4",
+                title="L",
+                description="L",
+                severity=Severity.LOW,
+                category=Category.PERFORMANCE,
+            ),
         ]
         score = calculate_scores(findings)
         assert score.num_critical == 1
@@ -242,7 +262,7 @@ class TestAnalyzeFile:
     def test_analyze_nonexistent_file(self):
         try:
             analyze_file("/nonexistent/file.py")
-            assert False, "Should raise FileNotFoundError"
+            raise AssertionError("Should raise FileNotFoundError")
         except FileNotFoundError:
             pass
 
@@ -256,8 +276,8 @@ class TestAnalyzeFile:
 class TestAnalyzeDirectory:
     def test_analyze_directory(self, tmp_path):
         # Create test files
-        (tmp_path / "test1.py").write_text('def foo():\n    pass\n')
-        (tmp_path / "test2.py").write_text('x = 1\n')
+        (tmp_path / "test1.py").write_text("def foo():\n    pass\n")
+        (tmp_path / "test2.py").write_text("x = 1\n")
 
         results = analyze_directory(str(tmp_path))
         assert len(results) == 2
@@ -265,8 +285,8 @@ class TestAnalyzeDirectory:
     def test_analyze_directory_excludes(self, tmp_path):
         cache_dir = tmp_path / "__pycache__"
         cache_dir.mkdir()
-        (cache_dir / "cached.py").write_text('x = 1\n')
-        (tmp_path / "main.py").write_text('def main():\n    pass\n')
+        (cache_dir / "cached.py").write_text("x = 1\n")
+        (tmp_path / "main.py").write_text("def main():\n    pass\n")
 
         results = analyze_directory(str(tmp_path))
         # Should exclude __pycache__
@@ -276,6 +296,6 @@ class TestAnalyzeDirectory:
     def test_analyze_directory_not_dir(self):
         try:
             analyze_directory("/nonexistent/dir")
-            assert False, "Should raise NotADirectoryError"
+            raise AssertionError("Should raise NotADirectoryError")
         except NotADirectoryError:
             pass
