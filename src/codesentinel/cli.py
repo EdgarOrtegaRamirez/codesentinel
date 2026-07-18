@@ -165,7 +165,8 @@ def cmd_sample(args: argparse.Namespace) -> int:
 
     path = Path(output_path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    yaml.dump(config, path, default_flow_style=False, sort_keys=False)
+    with path.open("w") as f:
+        yaml.dump(config, f, default_flow_style=False, sort_keys=False)
     print(f"Sample config written to: {output_path}")
     return 0
 
