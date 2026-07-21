@@ -76,6 +76,8 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "B", "A", "C4", "SIM", "UP"]
 ignore = ["E501"]
+# sample_code.py is intentionally dirty — used as test fixtures for the scanner
+exclude = ["sample_code.py"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/codesentinel"]

@@ -2,8 +2,8 @@
 
 import os
 import pickle
-import tempfile
 import subprocess
+import tempfile
 
 # AI-003: Global variable
 total = 0
@@ -58,7 +58,7 @@ api_key = "sk-1234567890abcdef"
 
 # AI-014: File operations without error handling
 def read_file(path):
-    f = open(path, 'r')
+    f = open(path)
     return f.read()
 
 
